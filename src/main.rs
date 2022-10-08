@@ -23,6 +23,7 @@ impl Arguments {
         } else if args.len() > 4 {
             return Err("too many arguments");
         } else {
+            // proceed if args OK
             let f = args[1].clone();
             if let Ok(ipaddr) = IpAddr::from_str(&f) {
                 return Ok(Arguments {
@@ -30,6 +31,7 @@ impl Arguments {
                     ipaddr,
                     threads: 4,
                 });
+            // handle if receive more flags
             } else {
                 let flag = args[1].clone();
                 if flag.contains("-h") || flag.contains("-help") && args.len() == 2 {
@@ -47,7 +49,7 @@ impl Arguments {
                     };
                     let threads = match args[2].parse::<u16>() {
                         Ok(s) => s,
-                        Err(_) => return Err("Failed to parse therad number"),
+                        Err(_) => return Err("Failed to parse thread number"),
                     };
                     return Ok(Arguments {
                         threads,
@@ -100,7 +102,6 @@ fn main() {
         }
     });
     let num_threads = arguments.threads;
-    let addr = arguments.ipaddr;
     let (tx, rx) = channel();
     for i in 0..num_threads {
         let tx = tx.clone();
