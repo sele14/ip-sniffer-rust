@@ -5,7 +5,10 @@ ip_sniffer.exe -j <ip-adr> // num of threads to use
 ip_sniffer.exe <ip-adr> // scan this IP
 */
 use std::str::FromStr;
-use std::{env, net::IpAddr, process};
+use std::sync::mpsc::{channel, Sender};
+use std::{env, net::IpAddr, net::TcpStream, process, thread};
+const MAX: u16 = 65535;
+use std::io::{self, Write};
 
 struct Arguments {
     flag: String,
@@ -59,6 +62,31 @@ impl Arguments {
     }
 }
 
+fn scan(tx: Sender<u16>, start_port: u16, addr: IpAddr, num_threads: u16) {
+    // # Arguments
+    // * `tx` - sender
+    // * `start_port` - a number from 0 to thread number
+    // * `addr` - ip address
+    // * `num_threads` - number of threads we are currently using in our program
+    let mut port: u16 = start_port + 1;
+    loop {
+        match TcpStream::connect((addr, port)) {
+            Ok(_) => {
+                print!(".");
+                // sends print statement
+                io::stdout().flush().unwrap();
+                // send the open port number
+                tx.send(port).unwrap();
+            }
+            Err(_) => {}
+        }
+        if (MAX - port) <= num_threads {
+            break;
+        }
+        port += num_threads;
+    }
+}
+
 fn main() {
     // store arguments passed to the program
     let args: Vec<String> = env::args().collect();
@@ -71,4 +99,26 @@ fn main() {
             process::exit(0);
         }
     });
+    let num_threads = arguments.threads;
+    let addr = arguments.ipaddr;
+    let (tx, rx) = channel();
+    for i in 0..num_threads {
+        let tx = tx.clone();
+        // spawn thread
+        thread::spawn(move || {
+            scan(tx, i, arguments.ipaddr, num_threads);
+        });
+    }
+    let mut out = vec![];
+    drop(tx);
+    for p in rx {
+        out.push(p);
+    }
+
+    println!("");
+    out.sort();
+
+    for v in out {
+        println!("{} is open", v);
+    }
 }
