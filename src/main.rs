@@ -65,11 +65,13 @@ impl Arguments {
 }
 
 fn scan(tx: Sender<u16>, start_port: u16, addr: IpAddr, num_threads: u16) {
-    // # Arguments
-    // * `tx` - sender
-    // * `start_port` - a number from 0 to thread number
-    // * `addr` - ip address
-    // * `num_threads` - number of threads we are currently using in our program
+    /*
+    # Arguments
+    * `tx` - sender
+    * `start_port` - a number from 0 to thread number
+    * `addr` - ip address
+    * `num_threads` - number of threads we are currently using in our program
+    */
     let mut port: u16 = start_port + 1;
     loop {
         match TcpStream::connect((addr, port)) {
